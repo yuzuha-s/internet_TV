@@ -1,0 +1,80 @@
+@startuml
+
+' hide the spot
+hide circle
+
+' avoid problems with angled crows feet
+skinparam linetype ortho
+
+entity "ジャンルgenres" as e01 {
+  *gen_id :int<<AUTO_INCREMENT>>
+  --
+  gen_name : varchar(10)
+}
+
+
+entity "シーズンseasons" as e02 {
+  *se_id :int<<AUTO_INCREMENT>>
+  --
+  se_name : varchar(10)
+  --
+  prog_id :int
+}
+
+entity "episodエピソードes" as e03 {
+  *epi_id :int<<AUTO_INCREMENT>>
+  --
+  epi_name : varchar(10)
+  --
+  se_id :int
+  --
+  runtime : time
+}
+
+
+entity "チャンネルchannels" as e04 {
+  *chan_id : int<<AUTO_INCREMENT>>
+  --
+  chan_name :varchar(10)
+}
+
+entity "番組programs" as e05 {
+  *prog_id :int <<AUTO_INCREMENT>>
+  --
+  prog_name : varchar(10)
+  --
+  gen_id : int
+  --
+  details : varchar(30)
+}
+
+entity "視聴数views" as e06 {
+  *view_id :int<<AUTO_INCREMENT>>
+  --
+  onair_id :int
+  --
+  view_count : int
+}
+
+entity "放送日onairdays" as e07{
+  *onair_id : int<<AUTO_INCREMENT>>
+  --
+  onair_day : date
+  --
+  chan_id : int
+  --
+  epi_id : int
+  --
+  start_time : time
+  --
+  end_time : time
+}
+
+e01 ||..|{ e05 :1ジャンルに多番組
+e05 ||..|{ e02 :1番組に多シーズン
+e04 }|..|{ e07 :複数チャンネルは毎日放送
+e07 ||..|{ e06 :1放送日の多視聴数
+e03 ||..|{ e07 :エピソード放送日は複数回あり
+e02 ||..|{ e03 :1シーズンに多エピソード
+
+@enduml
