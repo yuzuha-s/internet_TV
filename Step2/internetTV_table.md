@@ -50,7 +50,7 @@ select * from genres;
 ```
 
 ### 4. テーブルへのデータ登録(レコード入力)
-※SQL文はcreate_tables.sqlに記載しています。
+※SQL文はdate.sqlに記載しています。
 
 ```
 insert into テーブル名 (カラム名1,カラム名2,カラム名3) values

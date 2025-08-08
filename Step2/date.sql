@@ -1645,7 +1645,7 @@ insert into views (onair_id, view_count) values
 (576, 4221),
 (577, 8703),
 (578, 4720),
-(579, 7275),
+(579, 7275);
 
 insert into views (onair_id, view_count) values
 (580, 500),
