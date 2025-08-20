@@ -30,7 +30,7 @@
 |gen_id|int||INDEX|||
 |derails|varchar(30)|YES||||
 
-foreign key :  (references) genres (gen_id)
+foreign key : (gen_id) references genres (gen_id)
 
 
 `シーズン：seasons`

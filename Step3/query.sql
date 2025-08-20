@@ -4,10 +4,10 @@
 -- 順位 | 番組名 | エピソードタイトル | 視聴数 |
 
 select
-    row_number() over (order by v.view_count desc) as 順位,
-    p.pro_name      as 番組名,
-    e.epi_name      as エピソードタイトル,
-    v.view_count    as 視聴数
+    row_number() over (order by v.view_count desc) as ranking,
+    p.pro_name      as program_name,
+    e.epi_name      as episode_title,
+    v.view_count    as view_count
 from views v
 inner join onairdays o on v.onair_id = o.onair_id
 inner join episodes e on o.epi_id = e.epi_id
@@ -22,15 +22,15 @@ limit 3;
 -- 順位 | 番組名 | シーズン名 | エピソードタイトル | 視聴数 | 番組シーズン数 | 番組エピソード数 |
 
 select
-    row_number() over (order by v.view_count desc) as 順位,
-    p.pro_name      as 番組名,
-    s.se_name       as シーズン名,
-    e.epi_name      as エピソードタイトル,
-    v.view_count    as 視聴数,
+    row_number() over (order by v.view_count desc) as ranking,
+    p.pro_name      as program_name,
+    s.se_name       as season_name,
+    e.epi_name      as episode_title,
+    v.view_count    as view_count,
     -- 番組のシーズン数（サブクエリで重複ないようにカウント）
-    (select count(distinct se_id) from seasons where pro_id = p.pro_id) as 番組シーズン数,
+    (select count(distinct se_id) from seasons where pro_id = p.pro_id) as program_season_count,
     -- シーズンのエピソード数（サブクエリで重複ないようにカウント）
-    (select count(*) from episodes where se_id = s.se_id) as 番組エピソード数
+    (select count(*) from episodes where se_id = s.se_id) as season_episode_count
 from views v
 inner join onairdays o on v.onair_id = o.onair_id
 inner join episodes e on o.epi_id = e.epi_id
@@ -42,17 +42,17 @@ limit 3;
 
 --3. 本日の番組表を表示するために、本日、どのチャンネルの、何時から、何の番組が放送されるのかを知りたいです。
 --本日放送される全ての番組に対して、チャンネル名、放送開始時刻(日付+時間)、放送終了時刻、シーズン数、エピソード数、エピソードタイトル、エピソード詳細を取得してください。
---なお、番組の開始時刻が本日のものを本日方法される番組とみなすものとします=8/1とする
+--なお、番組の開始時刻が本日のものを本日方法される番組とみなすものとします（※今回は8/1とする）
 
 --| 放送開始時刻 | 放送終了時刻 | チャンネル名 | 番組名 | 番組シーズン数 | 番組エピソード数 | エピソード詳細 |  
 select 
-    o.start_time    as 放送開始時刻,    
-    o.end_time      as 放送終了時刻,
-    o.chan_id        as チャンネル名,
-    p.pro_name      as 番組名,
-    (select count(distinct se_id) from seasons where pro_id = p.pro_id) as 番組シーズン数,
-    (select count(*) from episodes where se_id = s.se_id) as 番組エピソード数,
-    p.details        as エピソード詳細
+    o.start_time     as start_time,    
+    o.end_time       as end_time,
+    o.chan_id        as channel_name,
+    p.pro_name       as program_name,
+    (select count(distinct se_id) from seasons where pro_id = p.pro_id) as program_season_count,
+    (select count(*) from episodes where se_id = s.se_id) as season_episode_count,
+    p.details        as program_details
 from onairdays o
 inner join episodes e on o.epi_id = e.epi_id
 inner join seasons s on e.se_id = s.se_id
@@ -67,13 +67,13 @@ order by o.start_time asc, o.chan_id asc;
 --| 放送日 | 放送開始時刻 | 放送終了時刻 | 番組名 | 番組シーズン数 | 番組エピソード数 | エピソード詳細  |     
 
 select 
-    o.onair_day     as 放送日,
-    o.start_time    as 放送開始時刻,    
-    o.end_time      as 放送終了時刻,
-    p.pro_name      as 番組名,
-    (select count(distinct se_id) from seasons where pro_id = p.pro_id) as 番組シーズン数,
-    (select count(*) from episodes where se_id = s.se_id) as 番組エピソード数,
-    p.details        as エピソード詳細
+    o.onair_day     as onair_date,
+    o.start_time    as start_time,    
+    o.end_time      as end_time,
+    p.pro_name      as program_name,
+    (select count(distinct se_id) from seasons where pro_id = p.pro_id) as program_season_count,
+    (select count(*) from episodes where se_id = s.se_id) as season_episode_count,
+    p.details        as episode_details
 from onairdays o
 inner join episodes e on o.epi_id = e.epi_id
 inner join seasons s on e.se_id = s.se_id
@@ -89,10 +89,10 @@ order by o.onair_day asc, o.start_time asc;
 
 -- | 順位 | 番組名 | 合計視聴数 |
 
-with 合計視聴数 as  (
+with total_views as  (
     select 
-        p.pro_name as 番組名,
-        sum(v.view_count) as 合計視聴数
+        p.pro_name as program_name,
+        sum(v.view_count) as total_views
     from onairdays o
     inner join episodes e on o.epi_id = e.epi_id
     inner join seasons s on e.se_id = s.se_id
@@ -102,11 +102,11 @@ with 合計視聴数 as  (
     group by p.pro_name
 )
 select 
-    row_number() over (order by 合計視聴数 desc) as 順位,
-    番組名,
-    合計視聴数
-from 合計視聴数
-order by 合計視聴数 desc
+    row_number() over (order by total_views desc) as ranking,
+    program_name,
+    total_views
+from total_views
+order by total_views desc
 limit 2;
 
 
@@ -116,11 +116,11 @@ limit 2;
 
 -- | ジャンル名 | 番組名 | エピソード平均視聴数 |
 
-with エピソード平均視聴数 as (
+with episode_avg_view as (
     select 
-        g.gen_name as ジャンル名,
-        p.pro_name as 番組名,
-        round(avg(v.view_count)) as エピソード平均視聴数
+        g.gen_name as genre_name,
+        p.pro_name as program_name,
+        round(avg(v.view_count)) as episode_avg_view
     from onairdays o
     inner join episodes e on o.epi_id = e.epi_id
     inner join seasons s on e.se_id = s.se_id
@@ -130,19 +130,19 @@ with エピソード平均視聴数 as (
     where o.onair_day between '2025-08-01' and '2025-08-07' 
     group by g.gen_name,p.pro_name
 ),
-順位 as (
+ranking as (
     select 
-        ジャンル名,
-        番組名,
-        エピソード平均視聴数,
-        row_number() over (partition by ジャンル名 order by エピソード平均視聴数) as 最大平均視聴数
-    from エピソード平均視聴数
+        genre_name,
+        program_name,
+        episode_avg_view,
+        row_number() over (partition by genre_name order by episode_avg_view) as max_avg_views_rank
+    from episode_avg_view
 )
 select 
-    ジャンル名,
-    番組名,
-    エピソード平均視聴数
-from 順位
-where 最大平均視聴数 = 1
-order by エピソード平均視聴数 desc;
+    genre_name,
+    program_name,
+    episode_avg_view
+from ranking
+where  max_avg_views_rank = 1
+order by episode_avg_view desc;
 
